@@ -1,0 +1,5 @@
+resource_group_name  = "rg-tfstate"
+storage_account_name = "sttfstate123456"
+container_name       = "tfstate"
+key                  = "azure-ai-service-infra.tfstate"
+use_azuread_auth     = true

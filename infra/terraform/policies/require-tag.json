@@ -1,0 +1,45 @@
+{
+  "mode": "Indexed",
+  "parameters": {
+    "tagName": {
+      "type": "String",
+      "metadata": {
+        "displayName": "Tag name",
+        "description": "Name of the tag that resources must carry."
+      }
+    },
+    "effect": {
+      "type": "String",
+      "metadata": {
+        "displayName": "Effect"
+      },
+      "allowedValues": ["audit", "deny", "disabled"],
+      "defaultValue": "deny"
+    },
+    "excludedResourceTypes": {
+      "type": "Array",
+      "metadata": {
+        "displayName": "Excluded resource types",
+        "description": "Resource types that do not support tags and are therefore exempt."
+      },
+      "defaultValue": []
+    }
+  },
+  "policyRule": {
+    "if": {
+      "allOf": [
+        {
+          "field": "[concat('tags[', parameters('tagName'), ']')]",
+          "exists": "false"
+        },
+        {
+          "field": "type",
+          "notIn": "[parameters('excludedResourceTypes')]"
+        }
+      ]
+    },
+    "then": {
+      "effect": "[parameters('effect')]"
+    }
+  }
+}

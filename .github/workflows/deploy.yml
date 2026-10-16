@@ -1,0 +1,117 @@
+name: terraform-apply
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/**"
+      - "app/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write # required for OIDC
+  contents: read
+
+env:
+  ARM_USE_OIDC: true
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
+  TF_VAR_groq_api_key: ${{ secrets.GROQ_API_KEY }}
+  IMAGE_NAME: azure-ai-service
+  TF_IN_AUTOMATION: true
+
+concurrency:
+  group: terraform-apply-main
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform init (remote state)
+        working-directory: infra/terraform
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${{ vars.TF_STATE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=${{ vars.TF_STATE_CONTAINER }}" \
+            -backend-config="key=azure-ai-service-infra.tfstate" \
+            -backend-config="use_azuread_auth=true"
+
+      # 1a. Bootstrap just the registry first, so an image exists before the
+      #     Container App that references it is created. `-target` here is a
+      #     deliberate first-run bootstrap; the follow-up apply converges state.
+      - name: Bootstrap Azure Container Registry
+        working-directory: infra/terraform
+        run: terraform apply -auto-approve -input=false -target=azurerm_container_registry.acr
+
+      - name: Read ACR name
+        id: acr
+        working-directory: infra/terraform
+        run: echo "name=$(terraform output -raw container_registry_name)" >> "$GITHUB_OUTPUT"
+
+      # 1b. Build and push the image into ACR (server-side build, no local Docker).
+      - name: Build and push image
+        run: |
+          az acr build \
+            --registry "${{ steps.acr.outputs.name }}" \
+            --image "${IMAGE_NAME}:${{ github.sha }}" \
+            --image "${IMAGE_NAME}:latest" \
+            ./app
+
+      # 1c. Apply the full stack. The image now exists, so the Container App
+      #     comes up healthy on the first revision.
+      - name: Terraform apply
+        working-directory: infra/terraform
+        run: terraform apply -auto-approve -input=false -var="image_tag=latest"
+
+      - name: Read Terraform outputs
+        id: tf
+        working-directory: infra/terraform
+        run: |
+          echo "registry=$(terraform output -raw container_registry_login_server)" >> "$GITHUB_OUTPUT"
+          echo "app=$(terraform output -raw container_app_name)" >> "$GITHUB_OUTPUT"
+          echo "rg=$(terraform output -raw resource_group_name)" >> "$GITHUB_OUTPUT"
+          echo "fqdn=$(terraform output -raw container_app_fqdn)" >> "$GITHUB_OUTPUT"
+
+      # 2. Roll a new revision onto the immutable, per-commit image tag.
+      - name: Roll new revision
+        run: |
+          az containerapp update \
+            --name "${{ steps.tf.outputs.app }}" \
+            --resource-group "${{ steps.tf.outputs.rg }}" \
+            --image "${{ steps.tf.outputs.registry }}/${IMAGE_NAME}:${{ github.sha }}"
+
+      # 3. Smoke test the deployed /health endpoint.
+      - name: Smoke test /health
+        env:
+          FQDN: ${{ steps.tf.outputs.fqdn }}
+        run: |
+          echo "Waiting for https://${FQDN}/health"
+          for i in $(seq 1 30); do
+            if curl -fsS "https://${FQDN}/health"; then
+              echo ""
+              echo "Health check passed."
+              exit 0
+            fi
+            echo "attempt ${i} failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Health check did not pass in time."
+          exit 1

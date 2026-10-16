@@ -1,0 +1,30 @@
+project_name = "azureaisvc"
+environment  = "dev"
+location     = "eastus2"
+
+# Tags. `owner` is enforced by the required-tags policy.
+tags = {
+  owner = "platform-team"
+}
+
+# Container image. CI overrides image_tag with the git SHA on each apply, then
+# rolls the revision with `az containerapp update`.
+image_name = "azure-ai-service"
+image_tag  = "latest"
+
+min_replicas = 0
+max_replicas = 3
+
+# Azure OpenAI toggle. When true, Terraform provisions an Azure OpenAI account
+# and model deployment. Set to false to run on Groq only.
+enable_azure_openai = true
+azure_openai_model  = "gpt-4o-mini"
+
+# Groq fallback. Provide the key as TF_VAR_groq_api_key or here (do not commit).
+enable_groq_fallback = true
+
+# Email that receives the 5xx alert.
+alert_email = "you@example.com"
+
+# Governance: enforce required tags with deny (true) or audit (false).
+enforce_tag_policy = true

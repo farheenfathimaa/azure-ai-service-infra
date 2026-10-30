@@ -1,0 +1,74 @@
+Command: isolated terraform console test of the five try(trimspace(...)) expressions used in infra/terraform/locals.tf
+Timestamp: 2026-10-30T04:44:27Z (UTC)
+Terraform: Terraform v1.9.8
+Workdir: /tmp/opencode/tfnull (temporary test config, not the repo)
+----------------------------------------
+--- test config ---
+variable "azure_openai_endpoint" {
+  type    = string
+  default = null
+}
+variable "azure_openai_key" {
+  type      = string
+  default   = null
+}
+variable "azure_openai_deployment" {
+  type    = string
+  default = null
+}
+variable "groq_api_key" {
+  type      = string
+  default   = null
+}
+variable "alert_email" {
+  type    = string
+  default = null
+}
+locals {
+  azure_openai_endpoint_override   = try(trimspace(var.azure_openai_endpoint) != "" ? var.azure_openai_endpoint : null, null)
+  azure_openai_key_override        = try(trimspace(var.azure_openai_key) != "" ? var.azure_openai_key : null, null)
+  azure_openai_deployment_override = try(trimspace(var.azure_openai_deployment) != "" ? var.azure_openai_deployment : null, null)
+  groq_api_key_effective           = try(trimspace(var.groq_api_key) != "" ? var.groq_api_key : null, null)
+  alert_email_effective            = try(trimspace(var.alert_email) != "" ? var.alert_email : null, null)
+}
+output "values" {
+  value = {
+    endpoint   = local.azure_openai_endpoint_override
+    key        = local.azure_openai_key_override
+    deployment = local.azure_openai_deployment_override
+    groq_key   = local.groq_api_key_effective
+    alert      = local.alert_email_effective
+  }
+}
+--- defaults (all variables null) ---
+[
+  null,
+  null,
+  null,
+  null,
+  null,
+]
+--- empty strings ---
+[
+  tostring(null),
+  tostring(null),
+  tostring(null),
+  tostring(null),
+  tostring(null),
+]
+--- whitespace only ---
+[
+  tostring(null),
+  tostring(null),
+  tostring(null),
+  tostring(null),
+  tostring(null),
+]
+--- real values ---
+[
+  "https://x.openai.azure.com/",
+  "k",
+  "gpt-4o-mini",
+  "g",
+  "a@b.com",
+]

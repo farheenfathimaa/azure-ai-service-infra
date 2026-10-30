@@ -35,6 +35,7 @@ were installed and no Azure resources were created, changed, or deleted.
 | Docker build + container smoke (`/health`, `/ask`, `/boom`) | **NOT RUN** | [docker-smoke.txt](evidence/docker-smoke.txt) | Docker CLI/daemon unavailable; installing it needs root. No Docker build was executed. |
 | Host-process endpoint smoke (supplementary, **not** Docker) | **PASS** | [local-smoke.txt](evidence/local-smoke.txt) | uvicorn with `LLM_PROVIDER=echo ALLOW_BOOM=true`: `/health` 200, `/ask` 200, `/boom` 500. |
 | Terraform `fmt -check -recursive`, `init -backend=false`, `validate` | **PASS** | [terraform-validate.txt](evidence/terraform-validate.txt) | All three exit codes 0. |
+| Terraform optional-value null safety | **PASS** | [terraform-locals-null-check.txt](evidence/terraform-locals-null-check.txt) | Isolated `terraform console` test: null, empty, and whitespace-only inputs normalize to null; real values pass through. |
 | actionlint on `.github/workflows` | **PASS** | [linters.txt](evidence/linters.txt) | Exit 0. |
 | ShellCheck on `scripts/*.sh` and `infra/bootstrap/bootstrap.sh` | **PASS** | [linters.txt](evidence/linters.txt) | Exit 0. |
 | TFLint on `infra/terraform` | **PASS** | [linters.txt](evidence/linters.txt) | Exit 0 (bundled `ruleset.terraform` 0.10.0). |

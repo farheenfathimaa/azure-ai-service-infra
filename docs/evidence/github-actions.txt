@@ -1,13 +1,14 @@
 Command: curl https://api.github.com/repos/farheenfathimaa/azure-ai-service-infra/actions/runs?per_page=5 (gh CLI is NOT installed)
-Timestamp: 2026-10-30T04:40:58Z (UTC)
+Timestamp: 2026-10-30T04:45:31Z (UTC)
 Note: job logs require repo admin auth (API returned 403), so only step-level results are recorded.
 ----------------------------------------
 --- latest workflow runs ---
+terraform-apply | event=push | status=completed | conclusion=failure | sha=7f439a8 | https://github.com/farheenfathimaa/azure-ai-service-infra/actions/runs/41004606270
 terraform-apply | event=push | status=completed | conclusion=failure | sha=f0e2a04 | https://github.com/farheenfathimaa/azure-ai-service-infra/actions/runs/41004156628
 terraform-apply | event=push | status=completed | conclusion=failure | sha=d779029 | https://github.com/farheenfathimaa/azure-ai-service-infra/actions/runs/39033618340
 app-ci | event=push | status=completed | conclusion=success | sha=d779029 | https://github.com/farheenfathimaa/azure-ai-service-infra/actions/runs/39033618318
 
---- jobs for run 41004156628 (push f0e2a04) ---
+--- jobs for run 41004606270 ---
 JOB apply | status=completed | conclusion=failure
   STEP  1 Set up job | completed | success
   STEP  2 Run actions/checkout@v4 | completed | success
@@ -17,7 +18,17 @@ JOB apply | status=completed | conclusion=failure
   STEP 24 Post Run actions/checkout@v4 | completed | success
   STEP 25 Complete job | completed | success
 
---- jobs for run 39033618340 (initial commit d779029) ---
+--- jobs for run 41004156628 ---
+JOB apply | status=completed | conclusion=failure
+  STEP  1 Set up job | completed | success
+  STEP  2 Run actions/checkout@v4 | completed | success
+  STEP  3 Run hashicorp/setup-terraform@v3 | completed | success
+  STEP  4 Azure login (OIDC) | completed | failure
+  STEP 23 Post Azure login (OIDC) | completed | success
+  STEP 24 Post Run actions/checkout@v4 | completed | success
+  STEP 25 Complete job | completed | success
+
+--- jobs for run 39033618340 ---
 JOB apply | status=completed | conclusion=failure
   STEP  1 Set up job | completed | success
   STEP  2 Run actions/checkout@v4 | completed | success

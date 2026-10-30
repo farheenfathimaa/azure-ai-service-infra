@@ -46,17 +46,21 @@ were installed and no Azure resources were created, changed, or deleted.
 | Azure deploy + live `/health` on FQDN | **NOT RUN** | [azure-verification.txt](evidence/azure-verification.txt) | No Azure login; no deployment attempted. |
 | 20 × `/boom` + 5xx alert fired + email received | **NOT RUN** | [azure-verification.txt](evidence/azure-verification.txt) | No Azure login; alert/email cannot be confirmed. |
 | `terraform destroy` clean teardown | **NOT RUN** | [azure-verification.txt](evidence/azure-verification.txt) | No Azure login; destroy not attempted. |
-| CI workflow runs (`gh run list`) | **NOT RUN** (`gh`) / **FAIL (expected)** (API) | [github-actions.txt](evidence/github-actions.txt) | `gh` not installed; the public GitHub Actions API was used instead. `terraform-apply` on `f0e2a04` failed at the `Azure login (OIDC)` step. `app-ci` last passed on `d779029`; `terraform-plan` has no runs (no PR). |
+| CI workflow runs (`gh run list`) | **NOT RUN** (`gh`) / **FAIL (expected)** (API) | [github-actions.txt](evidence/github-actions.txt) | `gh` not installed; the public GitHub Actions API was used instead. `terraform-apply` on `7f439a8` (latest) failed at the `Azure login (OIDC)` step; the two earlier pushes failed at the same step. `app-ci` last passed on `d779029`; `terraform-plan` has no runs (no PR). |
 
 ### CI failure detail
 
-The pushed `terraform-apply` run (`f0e2a04`) failed at **Azure login (OIDC)**; every
-Terraform/build/deploy step was skipped. The job log endpoint requires repository
-admin auth (API returned 403), so the exact login message was not retrievable.
-This is the expected failure until the `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and
-`AZURE_SUBSCRIPTION_ID` repository variables and the matching OIDC federated
-credential exist. `app-ci` did not re-run for this push because no `app/**` file
-changed; its last run on the initial commit passed.
+The latest pushed `terraform-apply` run (`7f439a8`) failed at **Azure login
+(OIDC)**; every Terraform/build/deploy step was skipped. The two earlier pushes
+(`f0e2a04`, `d779029`) failed at the same step. The job log endpoint requires
+repository admin auth (API returned 403), so the exact login message was not
+retrievable. This is the expected failure until the `AZURE_CLIENT_ID`,
+`AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID` repository variables and the
+matching OIDC federated credential exist. Because CI never reached Terraform, the
+null-safety fix was verified locally with `terraform console`
+([terraform-locals-null-check.txt](evidence/terraform-locals-null-check.txt)).
+`app-ci` did not re-run for these pushes because no `app/**` file changed; its last
+run on the initial commit passed.
 
 ## Checkov disposition
 

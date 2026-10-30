@@ -1,0 +1,18 @@
+Command: LLM_PROVIDER=echo ALLOW_BOOM=true uvicorn main:app --port 8011 (host process, NOT Docker)
+Timestamp: 2026-10-30T04:30:46Z (UTC)
+Python: Python 3.11.18
+Purpose: supplementary endpoint check only; does not replace the Docker smoke test (NOT RUN).
+----------------------------------------
+GET /health
+{"status":"ok","app":"azure-ai-service","environment":"dev","provider":"echo","documents":3}
+HTTP_STATUS=200
+
+POST /ask {"question":"What is the health endpoint?"}
+{"answer":"No LLM provider is configured, so this is an echo response. Received: Context:\n[1] This service is a FastAPI application deployed on Azure Container Apps. It exposes a RAG endpoint at /ask and a health endpoint at /health.\n\nQuestion: What is the health endpoint?","provider":"echo","fallback_from":null,"sources":["intro"]}
+HTTP_STATUS=200
+
+GET /boom
+{"detail":"intentional server error"}
+HTTP_STATUS=500
+
+server stopped (pid 11784)

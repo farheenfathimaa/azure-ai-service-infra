@@ -1,0 +1,7 @@
+Command: az account show
+Timestamp: 2026-10-30T04:37:56Z (UTC)
+----------------------------------------
+STATUS: NOT RUN
+Reason: the Azure CLI (az) is not installed in this environment ("az: command not found"), so the account/subscription state cannot be checked and no Azure deployment, live /health check, /boom alert test, or terraform destroy was attempted.
+No Azure resources were created, modified, or deleted.
+To run Phase 3: install the Azure CLI, run 'az login', then re-run this phase with explicit approval.

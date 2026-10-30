@@ -1,0 +1,7 @@
+Command: docker build -t azure-ai-service:test ./app && docker run ... && curl /health /ask /boom
+Timestamp: 2026-10-30T04:30:34Z (UTC)
+----------------------------------------
+STATUS: NOT RUN
+Reason: docker CLI is not installed in this environment ("docker: command not found") and installing the Docker daemon requires root, which is unavailable (sudo requires interactive authentication).
+No Docker build or container smoke test was executed.
+A supplementary non-Docker smoke test (uvicorn on the host) is recorded in docs/evidence/local-smoke.txt.

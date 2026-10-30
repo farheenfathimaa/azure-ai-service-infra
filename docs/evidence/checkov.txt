@@ -1,0 +1,128 @@
+Command: checkov -d infra/terraform --framework terraform --compact
+Timestamp: 2026-10-30T04:37:56Z (UTC)
+Checkov: 3.4.0
+----------------------------------------
+2026-10-30 10:08:05,262 [MainThread  ] [WARNI]  Error in evaluate_try of argument https://azurerm_cognitive_account.openai[0].custom_subdomain_name.openai.azure.com/ - Safe evaluation error: [('SyntaxError', 'https://azurerm_cognitive_account.openai[0].custom_subdomain_name.openai.azure.com/\nSyntaxError: invalid syntax (<unknown>, line 1)')]
+
+       _               _
+   ___| |__   ___  ___| | _______   __
+  / __| '_ \ / _ \/ __| |/ / _ \ \ / /
+ | (__| | | |  __/ (__|   < (_) \ V /
+  \___|_| |_|\___|\___|_|\_\___/ \_/
+
+By Prisma Cloud | version: 3.4.0 
+
+terraform scan results:
+
+Passed checks: 7, Failed checks: 20, Skipped checks: 0
+
+Check: CKV_AZURE_111: "Ensure that key vault enables soft delete"
+	PASSED for resource: azurerm_key_vault.kv
+	File: /keyvault.tf:1-17
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-general-policies/ensure-that-key-vault-enables-soft-delete
+Check: CKV_AZURE_114: "Ensure that key vault secrets have "content_type" set"
+	PASSED for resource: azurerm_key_vault_secret.secrets
+	File: /keyvault.tf:27-35
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-general-policies/ensure-that-key-vault-secrets-have-content-type-set
+Check: CKV_AZURE_182: "Ensure that VNET has at least 2 connected DNS Endpoints"
+	PASSED for resource: azurerm_virtual_network.main
+	File: /network.tf:1-7
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-networking-policies/azr-networking-182
+Check: CKV_AZURE_183: "Ensure that VNET uses local DNS addresses"
+	PASSED for resource: azurerm_virtual_network.main
+	File: /network.tf:1-7
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-networking-policies/azr-networking-183
+Check: CKV_AZURE_137: "Ensure ACR admin account is disabled"
+	PASSED for resource: azurerm_container_registry.acr
+	File: /registry.tf:1-9
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-iam-policies/bc-azure-137
+Check: CKV_AZURE_138: "Ensures that ACR disables anonymous pulling of images"
+	PASSED for resource: azurerm_container_registry.acr
+	File: /registry.tf:1-9
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-iam-policies/ensure-azure-acr-disables-anonymous-image-pulling
+Check: CKV2_AZURE_32: "Ensure private endpoint is configured to key vault"
+	PASSED for resource: azurerm_key_vault.kv
+	File: /keyvault.tf:1-17
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-general-policies/bc-azure-2-32
+Check: CKV_AZURE_189: "Ensure that Azure Key Vault disables public network access"
+	FAILED for resource: azurerm_key_vault.kv
+	File: /keyvault.tf:1-17
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-networking-policies/azr-networking-189
+Check: CKV_AZURE_109: "Ensure that key vault allows firewall rules settings"
+	FAILED for resource: azurerm_key_vault.kv
+	File: /keyvault.tf:1-17
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-networking-policies/ensure-that-key-vault-allows-firewall-rules-settings
+Check: CKV_AZURE_110: "Ensure that key vault enables purge protection"
+	FAILED for resource: azurerm_key_vault.kv
+	File: /keyvault.tf:1-17
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-general-policies/ensure-that-key-vault-enables-purge-protection
+Check: CKV_AZURE_42: "Ensure the key vault is recoverable"
+	FAILED for resource: azurerm_key_vault.kv
+	File: /keyvault.tf:1-17
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-general-policies/ensure-the-key-vault-is-recoverable
+Check: CKV_AZURE_41: "Ensure that the expiration date is set on all secrets"
+	FAILED for resource: azurerm_key_vault_secret.secrets
+	File: /keyvault.tf:27-35
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-secrets-policies/set-an-expiration-date-on-all-secrets
+Check: CKV_AZURE_236: "Ensure that Cognitive Services accounts disable local authentication"
+	FAILED for resource: azurerm_cognitive_account.openai[0]
+	File: /openai.tf:3-12
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-networking-policies/bc-azure-236
+Check: CKV_AZURE_134: "Ensure that Cognitive Services accounts disable public network access"
+	FAILED for resource: azurerm_cognitive_account.openai[0]
+	File: /openai.tf:3-12
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-networking-policies/ensure-azure-cognitive-services-accounts-disable-public-network-access
+Check: CKV_AZURE_238: "Ensure that all Azure Cognitive Services accounts are configured with a managed identity"
+	FAILED for resource: azurerm_cognitive_account.openai[0]
+	File: /openai.tf:3-12
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-networking-policies/bc-azure-238
+Check: CKV_AZURE_247: "Ensure that Azure Cognitive Services account hosted with OpenAI is configured with data loss prevention"
+	FAILED for resource: azurerm_cognitive_account.openai[0]
+	File: /openai.tf:3-12
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-networking-policies/bc-azure-247
+Check: CKV_AZURE_233: "Ensure Azure Container Registry (ACR) is zone redundant"
+	FAILED for resource: azurerm_container_registry.acr
+	File: /registry.tf:1-9
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-general-policies/bc-azure-233
+Check: CKV_AZURE_139: "Ensure ACR set to disable public networking"
+	FAILED for resource: azurerm_container_registry.acr
+	File: /registry.tf:1-9
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-networking-policies/ensure-azure-acr-is-set-to-disable-public-networking
+Check: CKV_AZURE_167: "Ensure a retention policy is set to cleanup untagged manifests."
+	FAILED for resource: azurerm_container_registry.acr
+	File: /registry.tf:1-9
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-general-policies/azr-general-167
+Check: CKV_AZURE_163: "Enable vulnerability scanning for container images."
+	FAILED for resource: azurerm_container_registry.acr
+	File: /registry.tf:1-9
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-general-policies/azr-general-163
+Check: CKV_AZURE_166: "Ensure container image quarantine, scan, and mark images verified"
+	FAILED for resource: azurerm_container_registry.acr
+	File: /registry.tf:1-9
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-general-policies/azr-general-166
+Check: CKV_AZURE_165: "Ensure geo-replicated container registries to match multi-region container deployments."
+	FAILED for resource: azurerm_container_registry.acr
+	File: /registry.tf:1-9
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-networking-policies/azr-networking-165
+Check: CKV_AZURE_164: "Ensures that ACR uses signed/trusted images"
+	FAILED for resource: azurerm_container_registry.acr
+	File: /registry.tf:1-9
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-general-policies/azr-general-164
+Check: CKV_AZURE_237: "Ensure dedicated data endpoints are enabled."
+	FAILED for resource: azurerm_container_registry.acr
+	File: /registry.tf:1-9
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-general-policies/bc-azure-237
+Check: CKV2_AZURE_22: "Ensure that Cognitive Services enables customer-managed key for encryption"
+	FAILED for resource: azurerm_cognitive_account.openai[0]
+	File: /openai.tf:3-12
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-general-policies/ensure-azure-cognitive-services-enables-customer-managed-keys-cmks-for-encryption
+Check: CKV2_AZURE_31: "Ensure VNET subnet is configured with a Network Security Group (NSG)"
+	FAILED for resource: azurerm_subnet.apps
+	File: /network.tf:11-25
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-general-policies/bc-azure-2-31
+Check: CKV2_AZURE_31: "Ensure VNET subnet is configured with a Network Security Group (NSG)"
+	FAILED for resource: azurerm_subnet.private_endpoints
+	File: /network.tf:28-33
+	Guide: https://docs.prismacloud.io/en/enterprise-edition/policy-reference/azure-policies/azure-general-policies/bc-azure-2-31
+
+checkov exit code: 1

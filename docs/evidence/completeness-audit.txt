@@ -1,0 +1,33 @@
+Command: python3 /tmp/opencode/audit.py (static audit of README layout, Terraform variables/outputs, workflows, README claims, .gitignore)
+Timestamp: 2026-10-30T04:39:18Z (UTC)
+Python: Python 3.14.4
+----------------------------------------
+| Item                                                               | Status | Evidence |
+|--------------------------------------------------------------------|--------|----------|
+| README Repository layout: every listed path exists                 | PASS   | 31 paths checked; missing=none |
+| terraform.tfvars.example variables declared in variables.tf        | PASS   | used=['alert_email', 'azure_openai_model', 'enable_azure_openai', 'enable_groq_fallback', 'enforce_tag_policy', 'environment', 'image_name', 'image_tag', 'location', 'max_replicas', 'min_replicas', 'project_name', 'tags']; undeclared=none |
+| Workflow -var/TF_VAR_* variables declared in variables.tf          | PASS   | used=['alert_email', 'groq_api_key', 'image_tag', 'use_oidc']; undeclared=none |
+| deploy.yml `terraform output -raw` names exist in outputs.tf       | PASS   | used=['container_app_fqdn', 'container_app_name', 'container_registry_login_server', 'container_registry_name', 'resource_group_name']; missing_required=none; undeclared=none |
+| Workflow repo vars documented in README                            | PASS   | workflow=['ALERT_EMAIL', 'AZURE_CLIENT_ID', 'AZURE_SUBSCRIPTION_ID', 'AZURE_TENANT_ID', 'TF_STATE_CONTAINER', 'TF_STATE_RESOURCE_GROUP', 'TF_STATE_STORAGE_ACCOUNT']; undocumented=none |
+| Workflow secrets documented in README                              | PASS   | workflow=['GROQ_API_KEY']; undocumented=none |
+| Workflow path: app-ci.yml builds ./app                             | PASS   | app-ci.yml contains 'working-directory: app' |
+| Workflow path: deploy.yml builds ./app with az acr build           | PASS   | deploy.yml contains './app' |
+| Workflow path: deploy.yml uses infra/terraform                     | PASS   | deploy.yml contains 'working-directory: infra/terraform' |
+| Workflow path: terraform-plan.yml uses infra/terraform             | PASS   | terraform-plan.yml contains 'working-directory: infra/terraform' |
+| README claim backed by code: OIDC federated credentials            | PASS   | files=['infra/terraform/providers.tf', 'scripts/setup-oidc.sh', '.github/workflows/deploy.yml']; missing_tokens=none |
+| README claim backed by code: Per-resource RBAC (ACR/KV/OpenAI)     | PASS   | files=['infra/terraform/identity.tf']; missing_tokens=none |
+| README claim backed by code: Key Vault secrets injected at runtime | PASS   | files=['infra/terraform/keyvault.tf', 'infra/terraform/container_apps.tf']; missing_tokens=none |
+| README claim backed by code: Azure Policy required tags            | PASS   | files=['infra/terraform/policy.tf', 'infra/terraform/variables.tf']; missing_tokens=none |
+| README claim backed by code: Azure Policy deny public blob         | PASS   | files=['infra/terraform/policy.tf', 'infra/terraform/policies/deny-public-blob.json']; missing_tokens=none |
+| README claim backed by code: 5xx metric alert + action group       | PASS   | files=['infra/terraform/monitoring.tf']; missing_tokens=none |
+| README claim backed by code: Azure OpenAI / Groq toggle            | PASS   | files=['infra/terraform/variables.tf', 'app/config.py']; missing_tokens=none |
+| README claim backed by code: Teardown scripts                      | PASS   | files=['scripts/teardown.sh', 'scripts/teardown.ps1']; missing_tokens=none |
+| CI OIDC: provider use_oidc is not pinned false                     | PASS   | providers.tf pins use_oidc=var.use_oidc: True; workflows set TF_VAR_use_oidc: True |
+| Optional empty CI values treated as unset (Groq key)               | PASS   | locals.tf uses groq_api_key_effective |
+| Optional empty CI values treated as unset (alert email)            | PASS   | locals.tf/monitoring.tf use alert_email_effective |
+| .gitignore covers secrets/state; examples stay tracked             | PASS   | problems=none |
+| No secrets/state tracked in git index                              | PASS   | tracked_sensitive=none |
+| App exposes /health, /ask, /boom                                   | PASS   | app/main.py route decorators |
+
+TOTAL=24 PASS=24 FAIL=0
+audit exit code: 0

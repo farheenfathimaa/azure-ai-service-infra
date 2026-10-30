@@ -18,6 +18,7 @@ env:
   ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
   ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
   ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  TF_VAR_use_oidc: true
   TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
   TF_VAR_groq_api_key: ${{ secrets.GROQ_API_KEY }}
   IMAGE_NAME: azure-ai-service

@@ -25,20 +25,29 @@ locals {
   container_app_name  = "ca-${local.name_prefix}"
   identity_name       = "id-${local.name_prefix}"
   openai_name         = "aoai-${local.name_prefix}-${local.suffix}"
-  openai_deployment   = coalesce(var.azure_openai_deployment, replace(var.azure_openai_model, ".", "-"))
+
+  # GitHub Actions passes unset repository variables/secrets as empty strings.
+  # Treat blank values as "not configured" so optional inputs stay optional.
+  azure_openai_endpoint_override   = var.azure_openai_endpoint != null && trimspace(var.azure_openai_endpoint) != "" ? var.azure_openai_endpoint : null
+  azure_openai_key_override        = var.azure_openai_key != null && trimspace(var.azure_openai_key) != "" ? var.azure_openai_key : null
+  azure_openai_deployment_override = var.azure_openai_deployment != null && trimspace(var.azure_openai_deployment) != "" ? var.azure_openai_deployment : null
+  groq_api_key_effective           = var.groq_api_key != null && trimspace(var.groq_api_key) != "" ? var.groq_api_key : null
+  alert_email_effective            = var.alert_email != null && trimspace(var.alert_email) != "" ? var.alert_email : null
+
+  openai_deployment = coalesce(local.azure_openai_deployment_override, replace(var.azure_openai_model, ".", "-"))
 
   # Azure OpenAI wiring: prefer bring-your-own values, else the provisioned account.
   created_openai_endpoint = try("https://${azurerm_cognitive_account.openai[0].custom_subdomain_name}.openai.azure.com/", null)
   created_openai_key      = try(azurerm_cognitive_account.openai[0].primary_access_key, null)
 
-  azure_openai_endpoint_effective   = coalesce(var.azure_openai_endpoint, local.created_openai_endpoint, "")
-  azure_openai_key_effective        = coalesce(var.azure_openai_key, local.created_openai_key)
-  azure_openai_deployment_effective = coalesce(var.azure_openai_deployment, var.enable_azure_openai ? local.openai_deployment : null, "")
+  azure_openai_endpoint_effective   = coalesce(local.azure_openai_endpoint_override, local.created_openai_endpoint, "")
+  azure_openai_key_effective        = coalesce(local.azure_openai_key_override, local.created_openai_key)
+  azure_openai_deployment_effective = coalesce(local.azure_openai_deployment_override, var.enable_azure_openai ? local.openai_deployment : null, "")
 
   # Secrets are written to Key Vault only when their value exists.
   kv_secrets = merge(
     local.azure_openai_key_effective != null ? { "azure-openai-key" = local.azure_openai_key_effective } : {},
-    var.enable_groq_fallback && var.groq_api_key != null ? { "groq-api-key" = var.groq_api_key } : {},
+    var.enable_groq_fallback && local.groq_api_key_effective != null ? { "groq-api-key" = local.groq_api_key_effective } : {},
   )
 
   # Map Key Vault secret names to the environment variables the app reads.
@@ -50,7 +59,7 @@ locals {
   # Provider toggle resolved at deploy time.
   llm_provider = (
     var.enable_azure_openai && local.azure_openai_key_effective != null
-    ? (var.enable_groq_fallback && var.groq_api_key != null ? "auto" : "azure_openai")
-    : (var.enable_groq_fallback && var.groq_api_key != null ? "groq" : "echo")
+    ? (var.enable_groq_fallback && local.groq_api_key_effective != null ? "auto" : "azure_openai")
+    : (var.enable_groq_fallback && local.groq_api_key_effective != null ? "groq" : "echo")
   )
 }

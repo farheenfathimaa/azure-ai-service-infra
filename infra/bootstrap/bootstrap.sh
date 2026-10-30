@@ -44,10 +44,13 @@ az storage account blob-service-properties update \
   --delete-retention-days 30 -o none
 
 echo "Creating container $CONTAINER_NAME"
+# Use the account key for this one-time create: the caller's Storage Blob Data
+# Contributor role is granted below and may not have propagated yet. Terraform
+# itself still uses AAD auth (use_azuread_auth = true) for remote state.
 az storage container create \
   --name "$CONTAINER_NAME" \
   --account-name "$STORAGE_ACCOUNT_NAME" \
-  --auth-mode login -o none
+  --auth-mode key -o none
 
 STORAGE_ID="$(az storage account show --name "$STORAGE_ACCOUNT_NAME" --resource-group "$RESOURCE_GROUP_NAME" --query id -o tsv)"
 PRINCIPAL_ID="$(az ad signed-in-user show --query id -o tsv 2>/dev/null || true)"

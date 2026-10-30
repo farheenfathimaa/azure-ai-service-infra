@@ -14,7 +14,7 @@ resource "azurerm_monitor_action_group" "main" {
   tags                = local.base_tags
 
   dynamic "email_receiver" {
-    for_each = var.alert_email != null ? [var.alert_email] : []
+    for_each = local.alert_email_effective != null ? [local.alert_email_effective] : []
     content {
       name          = "primary"
       email_address = email_receiver.value

@@ -1,5 +1,5 @@
 Command: cd app && pip install -r requirements-dev.txt && python -m pytest -v
-Timestamp: 2026-10-30T04:37:18Z (UTC)
+Timestamp: 2026-10-30T04:46:27Z (UTC)
 Environment: Python 3.11.18 (local uv-managed CPython, venv at app/.venv)
 ----------------------------------------
 Requirement already satisfied: fastapi==0.115.6 in ./.venv/lib/python3.11/site-packages (from -r /home/farheen/codesss/azure-ai-service-infra/app/requirements.txt (line 1)) (0.115.6)
@@ -50,5 +50,5 @@ tests/test_app.py::test_provider_echo_when_nothing_configured PASSED     [100%]
     _PortalFactoryType = typing.Callable[[], typing.ContextManager[anyio.abc.BlockingPortal]]
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-========================= 6 passed, 1 warning in 0.44s =========================
+========================= 6 passed, 1 warning in 1.15s =========================
 pytest exit code: 0

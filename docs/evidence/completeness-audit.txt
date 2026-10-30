@@ -1,5 +1,5 @@
 Command: python3 /tmp/opencode/audit.py (static audit of README layout, Terraform variables/outputs, workflows, README claims, .gitignore)
-Timestamp: 2026-10-30T04:44:36Z (UTC)
+Timestamp: 2026-10-30T04:46:27Z (UTC)
 Python: Python 3.14.4
 ----------------------------------------
 | Item                                                               | Status | Evidence |

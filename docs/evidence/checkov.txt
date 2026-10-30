@@ -1,8 +1,9 @@
 Command: checkov -d infra/terraform --framework terraform --compact
-Timestamp: 2026-10-30T04:37:56Z (UTC)
+Timestamp: 2026-10-30T04:46:35Z (UTC)
 Checkov: 3.4.0
 ----------------------------------------
-2026-10-30 10:08:05,262 [MainThread  ] [WARNI]  Error in evaluate_try of argument https://azurerm_cognitive_account.openai[0].custom_subdomain_name.openai.azure.com/ - Safe evaluation error: [('SyntaxError', 'https://azurerm_cognitive_account.openai[0].custom_subdomain_name.openai.azure.com/\nSyntaxError: invalid syntax (<unknown>, line 1)')]
+--- checkov ---
+2026-10-30 10:16:33,861 [MainThread  ] [WARNI]  Error in evaluate_try of argument https://azurerm_cognitive_account.openai[0].custom_subdomain_name.openai.azure.com/ - Safe evaluation error: [('SyntaxError', 'https://azurerm_cognitive_account.openai[0].custom_subdomain_name.openai.azure.com/\nSyntaxError: invalid syntax (<unknown>, line 1)')]
 
        _               _
    ___| |__   ___  ___| | _______   __

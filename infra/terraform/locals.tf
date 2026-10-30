@@ -28,11 +28,11 @@ locals {
 
   # GitHub Actions passes unset repository variables/secrets as empty strings.
   # Treat blank values as "not configured" so optional inputs stay optional.
-  azure_openai_endpoint_override   = var.azure_openai_endpoint != null && trimspace(var.azure_openai_endpoint) != "" ? var.azure_openai_endpoint : null
-  azure_openai_key_override        = var.azure_openai_key != null && trimspace(var.azure_openai_key) != "" ? var.azure_openai_key : null
-  azure_openai_deployment_override = var.azure_openai_deployment != null && trimspace(var.azure_openai_deployment) != "" ? var.azure_openai_deployment : null
-  groq_api_key_effective           = var.groq_api_key != null && trimspace(var.groq_api_key) != "" ? var.groq_api_key : null
-  alert_email_effective            = var.alert_email != null && trimspace(var.alert_email) != "" ? var.alert_email : null
+  azure_openai_endpoint_override   = try(trimspace(var.azure_openai_endpoint) != "" ? var.azure_openai_endpoint : null, null)
+  azure_openai_key_override        = try(trimspace(var.azure_openai_key) != "" ? var.azure_openai_key : null, null)
+  azure_openai_deployment_override = try(trimspace(var.azure_openai_deployment) != "" ? var.azure_openai_deployment : null, null)
+  groq_api_key_effective           = try(trimspace(var.groq_api_key) != "" ? var.groq_api_key : null, null)
+  alert_email_effective            = try(trimspace(var.alert_email) != "" ? var.alert_email : null, null)
 
   openai_deployment = coalesce(local.azure_openai_deployment_override, replace(var.azure_openai_model, ".", "-"))
 

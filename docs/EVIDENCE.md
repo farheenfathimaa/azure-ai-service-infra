@@ -45,7 +45,17 @@ were installed and no Azure resources were created, changed, or deleted.
 | Azure deploy + live `/health` on FQDN | **NOT RUN** | [azure-verification.txt](evidence/azure-verification.txt) | No Azure login; no deployment attempted. |
 | 20 × `/boom` + 5xx alert fired + email received | **NOT RUN** | [azure-verification.txt](evidence/azure-verification.txt) | No Azure login; alert/email cannot be confirmed. |
 | `terraform destroy` clean teardown | **NOT RUN** | [azure-verification.txt](evidence/azure-verification.txt) | No Azure login; destroy not attempted. |
-| CI workflow runs (`gh run list`) | **NOT RUN** | — | `gh` not installed. The push result is reported in the final run summary. |
+| CI workflow runs (`gh run list`) | **NOT RUN** (`gh`) / **FAIL (expected)** (API) | [github-actions.txt](evidence/github-actions.txt) | `gh` not installed; the public GitHub Actions API was used instead. `terraform-apply` on `f0e2a04` failed at the `Azure login (OIDC)` step. `app-ci` last passed on `d779029`; `terraform-plan` has no runs (no PR). |
+
+### CI failure detail
+
+The pushed `terraform-apply` run (`f0e2a04`) failed at **Azure login (OIDC)**; every
+Terraform/build/deploy step was skipped. The job log endpoint requires repository
+admin auth (API returned 403), so the exact login message was not retrievable.
+This is the expected failure until the `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and
+`AZURE_SUBSCRIPTION_ID` repository variables and the matching OIDC federated
+credential exist. `app-ci` did not re-run for this push because no `app/**` file
+changed; its last run on the initial commit passed.
 
 ## Checkov disposition
 

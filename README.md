@@ -1,9 +1,9 @@
 # azure-ai-service-infra
 
 Infrastructure-as-code and CI/CD for deploying a FastAPI **LLM / RAG** service to
-Azure Container Apps. Everything is managed with Terraform (`azurerm`), deployed
-through GitHub Actions using **OIDC federated credentials** (no stored secrets),
-with remote state in Azure Storage.
+Azure Container Apps. The workload is managed with Terraform (`azurerm`), deployed
+through GitHub Actions using **OIDC federated credentials** (no stored cloud
+credentials), with remote state in Azure Storage.
 
 The app exposes:
 
@@ -87,9 +87,9 @@ flowchart TB
 
 ### Security highlights
 
-- **No stored secrets in Azure or CI.** GitHub Actions authenticates to Azure with
-  a short-lived OIDC token; the app pulls images and reads secrets with a
-  user-assigned managed identity.
+- **No long-lived cloud credentials in CI.** GitHub Actions authenticates to Azure
+  with a short-lived OIDC token; the app pulls images and reads provider keys from
+  Key Vault with a user-assigned managed identity.
 - **Least-privilege RBAC** granted per resource, not at resource-group scope:
   - app identity → `AcrPull` on the single ACR
   - app identity → `Key Vault Secrets User` on the single vault
@@ -98,6 +98,11 @@ flowchart TB
 - **Key Vault** uses RBAC authorization, soft delete, and optional private endpoint.
 - **ACR** has the admin account disabled and public access can be disabled in favor
   of a private endpoint (`enable_private_endpoints = true`).
+- **Private endpoints are opt-in.** With `enable_private_endpoints = true`, public
+  access to ACR and Key Vault is disabled. The GitHub-hosted deploy workflow then
+  cannot run `az acr build` or write Key Vault secrets from the public internet;
+  use a self-hosted runner inside the VNet (plus an ACR build agent pool) for that
+  mode.
 
 ---
 
@@ -377,6 +382,23 @@ az ad app delete --id <AZURE_CLIENT_ID>
 > The Key Vault has soft delete (7 days) and purge protection disabled, so
 > `destroy` purges it immediately. If you enable `purge_protection_enabled`, the
 > vault name is reserved for the retention period after destroy.
+
+---
+
+## Verification
+
+Local verification (2026-10-30) is recorded in
+[docs/EVIDENCE.md](docs/EVIDENCE.md), including exact tool versions and raw output.
+
+- **Verified:** pytest (6/6), Terraform `fmt`/`init -backend=false`/`validate`,
+  actionlint, ShellCheck, TFLint, secret scan, and the README/layout/variables/
+  outputs/workflows completeness audit.
+- **Not verified:** Docker build/container smoke (Docker unavailable), live Azure
+  deployment, `/health` on the FQDN, the 5xx alert firing and email delivery, clean
+  `terraform destroy`, and CI workflow runs (no Azure CLI or `gh` in the verification
+  environment).
+
+The stack has **not** been deployed or destroy-tested as part of this verification.
 
 ---
 

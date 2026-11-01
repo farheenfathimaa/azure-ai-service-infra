@@ -24,7 +24,7 @@ The LLM provider is toggled between **Azure OpenAI** (primary) and **Groq**
 flowchart TB
     dev([Developer]) -->|push / PR| gh[GitHub Actions<br/>OIDC, no secrets]
     gh -->|terraform apply| az[Azure Resource Manager]
-    gh -->|az acr build + containerapp update| acr
+    gh -->|docker build/push + containerapp update| acr
 
     subgraph sub[Azure Subscription]
         direction TB
@@ -59,7 +59,7 @@ flowchart TB
 ```text
                          GitHub Actions (OIDC, no stored secrets)
                         /                |                     \
-             terraform apply      az acr build           az containerapp update
+             terraform apply    docker build/push        az containerapp update
                        |            |                            |
                        v            v                            v
         +----------------------------- Azure Subscription -----------------------------+
@@ -100,9 +100,8 @@ flowchart TB
   of a private endpoint (`enable_private_endpoints = true`).
 - **Private endpoints are opt-in.** With `enable_private_endpoints = true`, public
   access to ACR and Key Vault is disabled. The GitHub-hosted deploy workflow then
-  cannot run `az acr build` or write Key Vault secrets from the public internet;
-  use a self-hosted runner inside the VNet (plus an ACR build agent pool) for that
-  mode.
+  cannot push images or write Key Vault secrets from the public internet; use a
+  self-hosted runner inside the VNet for that mode.
 
 ---
 
@@ -147,7 +146,7 @@ flowchart TB
 
 - Azure CLI (`az`) ≥ 2.60, authenticated (`az login`)
 - Terraform ≥ 1.5
-- Docker (only for local image builds; CI uses `az acr build`)
+- Docker (local image builds and the CI image build; ACR Tasks are not used)
 - Python 3.11 + `uv` or `pip` (for running tests locally)
 - An Azure subscription where you can create resources and role assignments
   (`Contributor` + `User Access Administrator`)
@@ -222,7 +221,7 @@ Settings → Secrets → Actions → **Secrets** (optional):
 - **Pull request** touching `infra/**` → `terraform-plan` runs `fmt`, `validate`,
   and `plan`, and posts the plan as a PR comment.
 - **Merge to `main`** → `terraform-apply` (deploy.yml) runs `terraform apply`,
-  builds and pushes the image to ACR with `az acr build`, rolls a new revision
+  builds and pushes the image to ACR with `docker build` + `docker push`, rolls a new revision
   with `az containerapp update`, then smoke tests `/health`.
 
 ### Local deploy (alternative)
@@ -234,8 +233,10 @@ terraform plan  -var="image_tag=latest"
 terraform apply -var="image_tag=latest"
 
 # Build and push the image, then roll the revision:
-$acr = terraform output -raw container_registry_name
-az acr build --registry $acr --image azure-ai-service:latest ./..\app
+$registry = terraform output -raw container_registry_login_server
+az acr login --name (terraform output -raw container_registry_name)
+docker build -t "$registry/azure-ai-service:latest" ./..\app
+docker push "$registry/azure-ai-service:latest"
 az containerapp update -n (terraform output -raw container_app_name) `
   -g (terraform output -raw resource_group_name) `
   --image "$(terraform output -raw container_registry_login_server)/azure-ai-service:latest"

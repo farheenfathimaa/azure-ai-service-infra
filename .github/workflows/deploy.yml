@@ -21,6 +21,10 @@ env:
   TF_VAR_use_oidc: true
   TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
   TF_VAR_groq_api_key: ${{ secrets.GROQ_API_KEY }}
+  # Cost-safe by default: no Azure OpenAI resource and no Groq calls unless the
+  # repository variable is explicitly set to "true".
+  TF_VAR_enable_azure_openai: ${{ vars.ENABLE_AZURE_OPENAI || 'false' }}
+  TF_VAR_enable_groq_fallback: ${{ vars.ENABLE_GROQ_FALLBACK || 'false' }}
   IMAGE_NAME: azure-ai-service
   TF_IN_AUTOMATION: true
 
@@ -65,16 +69,23 @@ jobs:
       - name: Read ACR name
         id: acr
         working-directory: infra/terraform
-        run: echo "name=$(terraform output -raw container_registry_name)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "name=$(terraform output -raw container_registry_name)" >> "$GITHUB_OUTPUT"
+          echo "login_server=$(terraform output -raw container_registry_login_server)" >> "$GITHUB_OUTPUT"
 
-      # 1b. Build and push the image into ACR (server-side build, no local Docker).
+      # 1b. Build and push the image with the runner's Docker daemon.
+      #     `az acr build` (ACR Tasks) is blocked on some subscription types
+      #     with TasksOperationsNotAllowed, so we do not rely on it.
       - name: Build and push image
         run: |
-          az acr build \
-            --registry "${{ steps.acr.outputs.name }}" \
-            --image "${IMAGE_NAME}:${{ github.sha }}" \
-            --image "${IMAGE_NAME}:latest" \
+          az acr login --name "${{ steps.acr.outputs.name }}"
+          REGISTRY="${{ steps.acr.outputs.login_server }}"
+          docker build \
+            -t "$REGISTRY/${IMAGE_NAME}:${{ github.sha }}" \
+            -t "$REGISTRY/${IMAGE_NAME}:latest" \
             ./app
+          docker push "$REGISTRY/${IMAGE_NAME}:${{ github.sha }}"
+          docker push "$REGISTRY/${IMAGE_NAME}:latest"
 
       # 1c. Apply the full stack. The image now exists, so the Container App
       #     comes up healthy on the first revision.

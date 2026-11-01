@@ -19,6 +19,10 @@ env:
   TF_VAR_use_oidc: true
   TF_VAR_alert_email: ${{ vars.ALERT_EMAIL }}
   TF_VAR_groq_api_key: ${{ secrets.GROQ_API_KEY }}
+  # Cost-safe by default: no Azure OpenAI resource and no Groq calls unless the
+  # repository variable is explicitly set to "true".
+  TF_VAR_enable_azure_openai: ${{ vars.ENABLE_AZURE_OPENAI || 'false' }}
+  TF_VAR_enable_groq_fallback: ${{ vars.ENABLE_GROQ_FALLBACK || 'false' }}
   TF_IN_AUTOMATION: true
 
 concurrency:

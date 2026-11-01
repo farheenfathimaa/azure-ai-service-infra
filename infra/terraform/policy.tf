@@ -47,9 +47,9 @@ resource "azurerm_resource_group_policy_assignment" "require_tag" {
   description          = "Require the '${each.value}' tag."
 
   parameters = jsonencode({
-    tagName               = each.value
-    effect                = var.enforce_tag_policy ? "deny" : "audit"
-    excludedResourceTypes = local.tag_policy_excluded_types
+    tagName               = { value = each.value }
+    effect                = { value = var.enforce_tag_policy ? "deny" : "audit" }
+    excludedResourceTypes = { value = local.tag_policy_excluded_types }
   })
 }
 
@@ -60,6 +60,6 @@ resource "azurerm_resource_group_policy_assignment" "deny_public_blob" {
   description          = "Deny storage accounts that allow anonymous public blob access."
 
   parameters = jsonencode({
-    effect = "Deny"
+    effect = { value = "Deny" }
   })
 }

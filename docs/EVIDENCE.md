@@ -1,8 +1,10 @@
 # Verification Evidence
 
-**Date:** 2026-10-30 (UTC)
+**Date:** 2026-10-30, with live Azure setup added 2026-11-01 (UTC)
 **Repository:** `farheenfathimaa/azure-ai-service-infra`
-**Environment:** Ubuntu 26.04, no Docker daemon, no Azure CLI (`az`), no GitHub CLI (`gh`).
+**Environment:** Ubuntu 26.04, no Docker daemon, no GitHub CLI (`gh`). Azure CLI
+2.91.0 was installed and logged in on 2026-11-01; the local checks above were
+run before that, so they used `init -backend=false`.
 
 Every result below comes from a command that was actually run. Raw output is in
 [`docs/evidence/`](evidence/). Tools were installed **locally** for this run
@@ -19,7 +21,7 @@ were installed and no Azure resources were created, changed, or deleted.
 | pytest | 8.3.4 |
 | Terraform | 1.9.8 |
 | Docker | **not installed** |
-| Azure CLI (`az`) | **not installed** |
+| Azure CLI (`az`) | 2.91.0 (installed 2026-11-01) |
 | GitHub CLI (`gh`) | **not installed** |
 | actionlint | 1.7.7 |
 | ShellCheck | 0.10.0 |
@@ -42,10 +44,11 @@ were installed and no Azure resources were created, changed, or deleted.
 | Checkov on `infra/terraform` | **FAIL (advisory)** | [checkov.txt](evidence/checkov.txt) | 7 passed, 20 failed, 0 skipped. All findings are hardening/feature gaps or documented dev-cost tradeoffs; see below. |
 | Secret scan (keys, private keys, client secrets, UUIDs, emails) | **PASS** | [secret-scan.txt](evidence/secret-scan.txt) | No `gsk_` keys, private keys, client secrets, storage keys, SAS tokens, or UUIDs. Only the placeholder address in `terraform.tfvars.example` and the test literal in `test_app.py` matched. |
 | README/layout/variables/outputs/workflow completeness audit | **PASS** | [completeness-audit.txt](evidence/completeness-audit.txt) | 24/24 checks pass. |
-| `az account show` | **NOT RUN** | [azure-verification.txt](evidence/azure-verification.txt) | Azure CLI not installed. |
-| Azure deploy + live `/health` on FQDN | **NOT RUN** | [azure-verification.txt](evidence/azure-verification.txt) | No Azure login; no deployment attempted. |
-| 20 × `/boom` + 5xx alert fired + email received | **NOT RUN** | [azure-verification.txt](evidence/azure-verification.txt) | No Azure login; alert/email cannot be confirmed. |
-| `terraform destroy` clean teardown | **NOT RUN** | [azure-verification.txt](evidence/azure-verification.txt) | No Azure login; destroy not attempted. |
+| `az account show` + provider registration + remote-state bootstrap + OIDC identity | **PASS** | [azure-setup.txt](evidence/azure-setup.txt) | Subscription enabled; 12 resource providers registered; `rg-tfstate` + `sttfstate114294350` created; app registration with `github-main` and `github-pull-request` federated credentials; Contributor + User Access Administrator + Storage Blob Data Contributor verified. |
+| `terraform plan` against real Azure (AAD backend) | **PASS** | [terraform-plan-azure.txt](evidence/terraform-plan-azure.txt) | First run exposed a real `Invalid for_each argument` bug (secret key set derived from an apply-time value); fixed in `locals.tf`. After the fix: 26 to add (default), 22 to add with `llm_provider = "echo"`. |
+| Azure deploy + live `/health` on FQDN | **NOT RUN** | [azure-verification.txt](evidence/azure-verification.txt) | Infrastructure is bootstrapped but no `terraform apply` has been run; no deployment attempted. |
+| 20 × `/boom` + 5xx alert fired + email received | **NOT RUN** | [azure-verification.txt](evidence/azure-verification.txt) | Nothing deployed; alert/email cannot be confirmed. |
+| `terraform destroy` clean teardown | **NOT RUN** | [azure-verification.txt](evidence/azure-verification.txt) | Nothing applied, so there is no stack to destroy yet. |
 | CI workflow runs (`gh run list`) | **NOT RUN** (`gh`) / **FAIL (expected)** (API) | [github-actions.txt](evidence/github-actions.txt) | `gh` not installed; the public GitHub Actions API was used instead. `terraform-apply` on `7f439a8` (latest) failed at the `Azure login (OIDC)` step; the two earlier pushes failed at the same step. `app-ci` last passed on `d779029`; `terraform-plan` has no runs (no PR). |
 
 ### CI failure detail
@@ -90,7 +93,8 @@ Verified locally: unit tests, host-process endpoints, Terraform formatting and
 validation, workflow/shell/Terraform linting, secret scan, and structural
 completeness.
 
-Not verified: the Docker image, any live Azure resource, the live `/health`
-endpoint, the 5xx alert firing/email delivery, clean `terraform destroy`, and CI
-workflow execution. The project should **not** be described as "deployed" based on
-this evidence.
+Not verified: the Docker image, the application stack in Azure (only the
+remote-state storage account and the OIDC identity exist so far), the live
+`/health` endpoint, the 5xx alert firing/email delivery, clean
+`terraform destroy`, and CI workflow execution. The project should **not** be
+described as "deployed" based on this evidence.

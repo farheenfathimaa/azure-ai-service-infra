@@ -1,0 +1,37 @@
+Command: terraform -chdir=infra/terraform plan -input=false
+Timestamp: 2026-11-01T17:30:00Z (UTC)
+Terraform: v1.9.8 (azurerm 3.117.1, random 3.9.1)
+Backend: azurerm, rg-tfstate/sttfstate114294350, use_azuread_auth = true
+Auth: az login (user), subscription <redacted-subscription-id>
+----------------------------------------
+--- run 1: BEFORE fix (default vars) ---
+Error: Invalid for_each argument
+
+  on keyvault.tf line 28, in resource "azurerm_key_vault_secret" "secrets":
+  28:   for_each     = local.kv_secrets
+    local.kv_secrets is a map of dynamic, known only after apply
+
+Cause: secret set membership was derived from the provisioned Azure OpenAI
+primary_access_key, which is unknown until apply. The same expression also used
+coalesce() with all-null arguments on the disabled-provider path.
+
+Fix (infra/terraform/locals.tf):
+  - derive the key set from plan-time inputs
+    (var.enable_azure_openai || local.azure_openai_key_override != null)
+  - wrap each coalesce() in try(...) so the no-OpenAI path stays plan-safe
+
+--- run 2: AFTER fix (default vars: enable_azure_openai = true) ---
+Plan: 26 to add, 0 to change, 0 to destroy.
+Outputs include: container_app_name = "ca-azureaisvc-dev",
+                 resource_group_name = "rg-azureaisvc-dev"
+
+--- run 3: AFTER fix (free/echo path) ---
+Command: terraform plan -var enable_azure_openai=false -var enable_groq_fallback=false
+Plan: 22 to add, 0 to change, 0 to destroy.
+llm_provider = "echo"
+
+--- other checks ---
+terraform fmt -check -recursive : exit 0
+terraform validate             : Success! The configuration is valid.
+terraform plan output contains no plaintext secrets
+  (sensitive values shown as "(sensitive value)")

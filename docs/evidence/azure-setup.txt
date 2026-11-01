@@ -1,0 +1,52 @@
+Command: az login; az provider register; infra/bootstrap/bootstrap.sh; scripts/setup-oidc.sh
+Timestamp: 2026-11-01T17:34:37Z (UTC)
+Environment: Ubuntu 26.04, Azure CLI 2.91.0 (apt), Terraform 1.9.8
+Subscription: <redacted-subscription-id>
+Tenant: <redacted-tenant-id>
+Signed-in user: farheennfathima@gmail.com
+----------------------------------------
+--- az account show ---
+state: Enabled
+isDefault: true
+name: Azure subscription 1
+tenantDefaultDomain: farheennfathimagmail.onmicrosoft.com
+
+--- provider registration (before) ---
+Microsoft.AlertsManagement     NotRegistered
+Microsoft.App                  NotRegistered
+Microsoft.Authorization        Registered
+Microsoft.CognitiveServices    NotRegistered
+Microsoft.ContainerRegistry    NotRegistered
+Microsoft.KeyVault             NotRegistered
+Microsoft.ManagedIdentity      NotRegistered
+Microsoft.Network              NotRegistered
+Microsoft.OperationalInsights  NotRegistered
+Microsoft.PolicyInsights       NotRegistered
+Microsoft.Storage              NotRegistered
+
+--- provider registration (after, ~30s) ---
+ALL REGISTERED (poll 4)
+
+--- infra/bootstrap/bootstrap.sh eastus2 ---
+Using subscription <redacted-subscription-id>
+Creating resource group rg-tfstate
+Creating storage account sttfstate114294350
+Enabling blob versioning and soft delete
+Creating container tfstate
+Granting current user Storage Blob Data Contributor on the state account
+Bootstrap complete.
+
+--- scripts/setup-oidc.sh ---
+Creating app registration 'gh-azure-ai-service-infra'
+  created federated credential 'github-pull-request' (repo:farheenfathimaa/azure-ai-service-infra:pull_request)
+  created federated credential 'github-main' (repo:farheenfathimaa/azure-ai-service-infra:ref:refs/heads/main)
+Granting subscription roles
+Granting Storage Blob Data Contributor on the state account
+
+--- role assignments on the service principal (verified) ---
+Contributor                    /subscriptions/<redacted-subscription-id>
+User Access Administrator      /subscriptions/<redacted-subscription-id>
+Storage Blob Data Contributor  .../storageAccounts/sttfstate114294350
+
+--- terraform init -backend-config=backend.hcl ---
+Terraform has been successfully initialized!   (AAD auth to rg-tfstate/sttfstate114294350)

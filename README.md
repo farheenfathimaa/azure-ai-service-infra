@@ -389,14 +389,21 @@ az ad app delete --id <AZURE_CLIENT_ID>
 
 Local verification (2026-10-30) is recorded in
 [docs/EVIDENCE.md](docs/EVIDENCE.md), including exact tool versions and raw output.
+Live Azure setup and `terraform plan` (2026-11-01) are recorded in
+[azure-setup.txt](docs/evidence/azure-setup.txt) and
+[terraform-plan-azure.txt](docs/evidence/terraform-plan-azure.txt).
 
 - **Verified:** pytest (6/6), Terraform `fmt`/`init -backend=false`/`validate`,
   actionlint, ShellCheck, TFLint, secret scan, and the README/layout/variables/
   outputs/workflows completeness audit.
-- **Not verified:** Docker build/container smoke (Docker unavailable), live Azure
-  deployment, `/health` on the FQDN, the 5xx alert firing and email delivery, clean
-  `terraform destroy`, and CI workflow runs (no Azure CLI or `gh` in the verification
-  environment).
+- **Verified against Azure (2026-11-01):** `az login`, resource-provider
+  registration, remote-state bootstrap (`rg-tfstate`), the GitHub OIDC identity
+  with its federated credentials and RBAC, and `terraform plan` against the real
+  backend (26 resources). The plan run found and fixed a `for_each` bug in
+  `infra/terraform/locals.tf`.
+- **Not verified:** Docker build/container smoke (Docker unavailable), live
+  application deployment, `/health` on the FQDN, the 5xx alert firing and email
+  delivery, clean `terraform destroy`, and CI workflow runs (no `gh`).
 
 The stack has **not** been deployed or destroy-tested as part of this verification.
 

@@ -40,13 +40,18 @@ locals {
   created_openai_endpoint = try("https://${azurerm_cognitive_account.openai[0].custom_subdomain_name}.openai.azure.com/", null)
   created_openai_key      = try(azurerm_cognitive_account.openai[0].primary_access_key, null)
 
-  azure_openai_endpoint_effective   = coalesce(local.azure_openai_endpoint_override, local.created_openai_endpoint, "")
-  azure_openai_key_effective        = coalesce(local.azure_openai_key_override, local.created_openai_key)
-  azure_openai_deployment_effective = coalesce(local.azure_openai_deployment_override, var.enable_azure_openai ? local.openai_deployment : null, "")
+  # coalesce() errors when every argument is null/empty, so wrap each call in
+  # try() to keep the disabled-provider path (no OpenAI account) plan-safe.
+  azure_openai_endpoint_effective   = try(coalesce(local.azure_openai_endpoint_override, local.created_openai_endpoint), "")
+  azure_openai_key_effective        = try(coalesce(local.azure_openai_key_override, local.created_openai_key), null)
+  azure_openai_deployment_effective = try(coalesce(local.azure_openai_deployment_override, var.enable_azure_openai ? local.openai_deployment : null), "")
 
-  # Secrets are written to Key Vault only when their value exists.
+  # Secret set membership must be known at plan time. The provisioned OpenAI key
+  # is unknown until apply, so derive the key set from inputs instead; only the
+  # secret *value* may stay unknown.
   kv_secrets = merge(
-    local.azure_openai_key_effective != null ? { "azure-openai-key" = local.azure_openai_key_effective } : {},
+    (var.enable_azure_openai || local.azure_openai_key_override != null)
+    ? { "azure-openai-key" = local.azure_openai_key_effective } : {},
     var.enable_groq_fallback && local.groq_api_key_effective != null ? { "groq-api-key" = local.groq_api_key_effective } : {},
   )
 

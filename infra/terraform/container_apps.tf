@@ -5,6 +5,12 @@ resource "azurerm_container_app_environment" "env" {
   log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
   infrastructure_subnet_id   = azurerm_subnet.apps.id
   tags                       = local.base_tags
+
+  lifecycle {
+    # azurerm 3.x reads this back from the API even when it is not configured,
+    # which otherwise forces a destroy/recreate on every plan.
+    ignore_changes = [infrastructure_resource_group_name]
+  }
 }
 
 resource "azurerm_container_app" "app" {

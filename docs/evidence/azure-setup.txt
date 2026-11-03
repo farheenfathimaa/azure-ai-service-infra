@@ -50,3 +50,8 @@ Storage Blob Data Contributor  .../storageAccounts/sttfstate114294350
 
 --- terraform init -backend-config=backend.hcl ---
 Terraform has been successfully initialized!   (AAD auth to rg-tfstate/sttfstate114294350)
+
+--- teardown (2026-11-03) ---
+rg-tfstate and its storage account were deleted after the stack verification, so
+the state backend no longer exists. Re-running `bootstrap.sh` recreates it and
+prints new TF_STATE_* values.

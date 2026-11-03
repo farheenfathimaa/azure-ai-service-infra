@@ -274,6 +274,10 @@ enable_azure_openai = false
 enable_groq_fallback = true
 ```
 
+In CI these come from the `ENABLE_AZURE_OPENAI` / `ENABLE_GROQ_FALLBACK`
+repository variables and **default to `false`**, so a deploy without them runs in
+echo mode and creates no billable AI resource.
+
 Secrets (`azure-openai-key`, `groq-api-key`) live in Key Vault and are injected
 into the container at runtime through the managed identity — never in the image
 or in source.
@@ -402,12 +406,38 @@ Live Azure setup and `terraform plan` (2026-11-01) are recorded in
   with its federated credentials and RBAC, and `terraform plan` against the real
   backend (26 resources). The plan run found and fixed a `for_each` bug in
   `infra/terraform/locals.tf`.
-- **Not verified:** Docker build/container smoke (Docker unavailable), live
-  application deployment, `/health` on the FQDN, the 5xx alert firing and email
-  delivery, clean `terraform destroy`, and CI workflow runs (no `gh`).
+- **Not verified:** Docker build/container smoke (Docker unavailable locally;
+  the image was built with Podman and ran in Azure), alert **email delivery**
+  (needs the Azure confirmation link clicked), and CI workflow runs (no `gh`).
 
-The stack has **not** been deployed or destroy-tested as part of this verification.
+### Live deployment (2026-11-02)
 
+A full **deploy → verify → destroy** cycle was run against a real subscription in
+echo mode (`enable_azure_openai=false`, no API keys), so no token costs were
+incurred. Outputs captured during the run:
+
+| Output | Value |
+| --- | --- |
+| `container_app_fqdn` | `ca-azureaisvc-dev--kcip8p0.purplecoast-e4f384de.eastus2.azurecontainerapps.io` |
+| `health_url` | `https://ca-azureaisvc-dev--kcip8p0.purplecoast-e4f384de.eastus2.azurecontainerapps.io/health` |
+| `ask_url` | `https://ca-azureaisvc-dev--kcip8p0.purplecoast-e4f384de.eastus2.azurecontainerapps.io/ask` |
+| `container_registry_login_server` | `acrazureaisvcdevantu.azurecr.io` |
+| `key_vault_uri` | `https://kv-azureaisvc-antu.vault.azure.net/` |
+| `llm_provider` | `echo` |
+| `resource_group_name` | `rg-azureaisvc-dev` |
+
+| Check | Result |
+| --- | --- |
+| `terraform apply` | **PASS** — 17 resources added |
+| `GET /health` | **PASS** — 200, `{"status":"ok","app":"azure-ai-service","environment":"dev","provider":"echo","documents":3}` |
+| `POST /ask` | **PASS** — 200, echo answer with RAG sources |
+| `GET /boom` | **PASS** — 500 |
+| 5xx metric alert | **PASS** — `alert-http5xx-azureaisvc-dev` fired (`State: New`, 2026-11-02T02:08:09Z) |
+| Alert email | **NOT VERIFIED** — action group has the receiver; delivery requires the Azure confirmation link |
+| `terraform destroy` | **PASS** — stack removed after verification (see `docs/evidence/azure-deploy.txt`) |
+
+> The deployment was torn down after verification, so the URLs above no longer
+> resolve. Raw output: [docs/evidence/azure-deploy.txt](docs/evidence/azure-deploy.txt).
 ---
 
 ## Verify the stack (definition of done)

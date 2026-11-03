@@ -1,0 +1,67 @@
+Command: terraform apply -auto-approve (echo mode) + live endpoint + alert checks
+Timestamp: 2026-11-02T02:12:25Z (UTC)
+Terraform: v1.9.8, azurerm 3.117.1
+Auth: az login (user), subscription <redacted-subscription-id>
+Config: enable_azure_openai=false, enable_groq_fallback=false, alert_email=farheennfathima@gmail.com
+Image: acrazureaisvcdevantu.azurecr.io/azure-ai-service:latest (built with podman, pushed to ACR)
+----------------------------------------
+--- terraform apply ---
+Apply complete! Resources: 17 added, 0 changed, 0 destroyed.
+
+Outputs:
+container_app_name              = "ca-azureaisvc-dev"
+container_app_fqdn              = "ca-azureaisvc-dev--kcip8p0.purplecoast-e4f384de.eastus2.azurecontainerapps.io"
+health_url                      = "https://ca-azureaisvc-dev--kcip8p0.purplecoast-e4f384de.eastus2.azurecontainerapps.io/health"
+ask_url                         = "https://ca-azureaisvc-dev--kcip8p0.purplecoast-e4f384de.eastus2.azurecontainerapps.io/ask"
+container_registry_login_server = "acrazureaisvcdevantu.azurecr.io"
+key_vault_uri                   = "https://kv-azureaisvc-antu.vault.azure.net/"
+llm_provider                    = "echo"
+resource_group_name             = "rg-azureaisvc-dev"
+
+--- GET /health ---
+HTTP 200
+{"status":"ok","app":"azure-ai-service","environment":"dev","provider":"echo","documents":3}
+
+--- POST /ask ---
+HTTP 200
+{"answer":"No LLM provider is configured, so this is an echo response. Received: Context:\n[1] This service is a FastAPI application deployed on Azure Container Apps...","provider":"echo","fallback_from":null,"sources":["intro","fallback"]}
+
+--- GET /boom ---
+HTTP 500
+
+--- 20 x GET /boom, then metric alert state ---
+Microsoft.AlertsManagement/alerts (timeRange=1h):
+Name                          State  Rule                                     Start
+alert-http5xx-azureaisvc-dev  New    .../metricAlerts/alert-http5xx-...       2026-11-02T02:08:09Z
+
+--- container app ---
+provisioningState: Succeeded
+image: acrazureaisvcdevantu.azurecr.io/azure-ai-service:latest
+activeRevision: ca-azureaisvc-dev--kcip8p0
+maxReplicas: 3
+minReplicas: null (= 0, scale to zero)
+
+--- action group ---
+enabled: true
+emailReceivers:
+- name: primary
+  address: farheennfathima@gmail.com
+
+--- metric alert ---
+enabled: true
+severity: 2
+evaluationFrequency: PT1M
+windowSize: PT5M
+criterion: Requests / statusCodeCategory Include 5xx / Total > 5
+
+--- terraform destroy (2026-11-03) ---
+First attempt aborted on a transient DNS failure (login.microsoftonline.com
+name resolution); no partial state was left behind. Re-run result:
+
+Destroy complete! Resources: 5 destroyed.
+terraform state list: 0 resources
+az group list: only NetworkWatcherRG (Azure-managed, free)
+az resource list: only NetworkWatcher_eastus2 (Azure-managed, free)
+
+rg-tfstate (Terraform state storage) was deleted separately after the stack
+teardown, so the subscription has no billable resources left.

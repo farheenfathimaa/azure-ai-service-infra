@@ -419,34 +419,39 @@ Live Azure setup and `terraform plan` (2026-11-01) are recorded in
   the image was built with Podman and ran in Azure), alert **email delivery**
   (needs the Azure confirmation link clicked), and CI workflow runs (no `gh`).
 
-### Live deployment (2026-11-02)
+### Live deployments (2026-11-02 and 2026-11-03)
 
-A full **deploy → verify → destroy** cycle was run against a real subscription in
-echo mode (`enable_azure_openai=false`, no API keys), so no token costs were
-incurred. Outputs captured during the run:
+Two full **deploy → verify → destroy** cycles were run against a real
+subscription in echo mode (`enable_azure_openai=false`, no API keys), so no token
+costs were incurred. The second cycle was deployed end-to-end by the
+`terraform-apply` GitHub Actions workflow (run `41688133667`, all 12 steps green).
+
+Latest (CI-deployed) outputs:
 
 | Output | Value |
 | --- | --- |
-| `container_app_fqdn` | `ca-azureaisvc-dev--kcip8p0.purplecoast-e4f384de.eastus2.azurecontainerapps.io` |
-| `health_url` | `https://ca-azureaisvc-dev--kcip8p0.purplecoast-e4f384de.eastus2.azurecontainerapps.io/health` |
-| `ask_url` | `https://ca-azureaisvc-dev--kcip8p0.purplecoast-e4f384de.eastus2.azurecontainerapps.io/ask` |
-| `container_registry_login_server` | `acrazureaisvcdevantu.azurecr.io` |
-| `key_vault_uri` | `https://kv-azureaisvc-antu.vault.azure.net/` |
+| `container_app_fqdn` | `ca-azureaisvc-dev.proudbay-7ec1e4a1.eastus2.azurecontainerapps.io` |
+| `health_url` | `https://ca-azureaisvc-dev.proudbay-7ec1e4a1.eastus2.azurecontainerapps.io/health` |
+| `ask_url` | `https://ca-azureaisvc-dev.proudbay-7ec1e4a1.eastus2.azurecontainerapps.io/ask` |
+| `container_registry_login_server` | `acrazureaisvcdev4xww.azurecr.io` |
+| `key_vault_uri` | `https://kv-azureaisvc-4xww.vault.azure.net/` |
 | `llm_provider` | `echo` |
 | `resource_group_name` | `rg-azureaisvc-dev` |
 
 | Check | Result |
 | --- | --- |
-| `terraform apply` | **PASS** — 17 resources added |
+| `terraform apply` | **PASS** — 17 resources added (first, local cycle) |
+| GitHub Actions `terraform-apply` | **PASS** — run `41688133667`, 12/12 steps |
 | `GET /health` | **PASS** — 200, `{"status":"ok","app":"azure-ai-service","environment":"dev","provider":"echo","documents":3}` |
 | `POST /ask` | **PASS** — 200, echo answer with RAG sources |
 | `GET /boom` | **PASS** — 500 |
-| 5xx metric alert | **PASS** — `alert-http5xx-azureaisvc-dev` fired (`State: New`, 2026-11-02T02:08:09Z) |
+| 5xx metric alert | **PASS** — `alert-http5xx-azureaisvc-dev` fired in both cycles (`2026-11-02T02:08:09Z`, `2026-11-03T17:54:02Z`) |
 | Alert email | **NOT VERIFIED** — action group has the receiver; delivery requires the Azure confirmation link |
-| `terraform destroy` | **PASS** — stack removed after verification (see `docs/evidence/azure-deploy.txt`) |
+| `terraform destroy` | **PASS** — both stacks removed after verification (see `docs/evidence/azure-deploy.txt`) |
 
-> The deployment was torn down after verification, so the URLs above no longer
-> resolve. Raw output: [docs/evidence/azure-deploy.txt](docs/evidence/azure-deploy.txt).
+> Both deployments were torn down after verification, so the URLs above no longer
+> resolve. Raw output: [docs/evidence/azure-deploy.txt](docs/evidence/azure-deploy.txt)
+> and [docs/evidence/github-actions.txt](docs/evidence/github-actions.txt).
 ---
 
 ## Verify the stack (definition of done)

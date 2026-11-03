@@ -65,3 +65,23 @@ az resource list: only NetworkWatcher_eastus2 (Azure-managed, free)
 
 rg-tfstate (Terraform state storage) was deleted separately after the stack
 teardown, so the subscription has no billable resources left.
+
+--- CI deploy cycle (2026-11-03) ---
+Deployed end-to-end by GitHub Actions run 41688133667 (commit d3a8fbd), echo mode.
+Outputs:
+  container_app_fqdn              = ca-azureaisvc-dev.proudbay-7ec1e4a1.eastus2.azurecontainerapps.io
+  health_url                      = https://ca-azureaisvc-dev.proudbay-7ec1e4a1.eastus2.azurecontainerapps.io/health
+  ask_url                         = https://ca-azureaisvc-dev.proudbay-7ec1e4a1.eastus2.azurecontainerapps.io/ask
+  container_registry_login_server = acrazureaisvcdev4xww.azurecr.io
+  key_vault_uri                   = https://kv-azureaisvc-4xww.vault.azure.net/
+  llm_provider                    = echo
+Checks:
+  GET  /health -> 200 {"status":"ok","app":"azure-ai-service","environment":"dev","provider":"echo","documents":3}
+  POST /ask    -> 200 echo answer, sources ["intro","fallback"]
+  GET  /boom   -> 500
+  20 x /boom   -> 5xx alert fired, State: New, start 2026-11-03T17:54:02Z
+App:
+  provisioningState: Succeeded
+  image: acrazureaisvcdev4xww.azurecr.io/azure-ai-service:d3a8fbdb4075cd98fceb742002b3cf9ea3fe735e
+  revision: ca-azureaisvc-dev--0000002
+  scale: min 0 (scale to zero), max 3

@@ -44,26 +44,34 @@ were installed and no Azure resources were created, changed, or deleted.
 | Checkov on `infra/terraform` | **FAIL (advisory)** | [checkov.txt](evidence/checkov.txt) | 7 passed, 20 failed, 0 skipped. All findings are hardening/feature gaps or documented dev-cost tradeoffs; see below. |
 | Secret scan (keys, private keys, client secrets, UUIDs, emails) | **PASS** | [secret-scan.txt](evidence/secret-scan.txt) | No `gsk_` keys, private keys, client secrets, storage keys, SAS tokens, or UUIDs. Only the placeholder address in `terraform.tfvars.example` and the test literal in `test_app.py` matched. |
 | README/layout/variables/outputs/workflow completeness audit | **PASS** | [completeness-audit.txt](evidence/completeness-audit.txt) | 24/24 checks pass. |
-| `az account show` + provider registration + remote-state bootstrap + OIDC identity | **PASS** | [azure-setup.txt](evidence/azure-setup.txt) | Subscription enabled; 12 resource providers registered; `rg-tfstate` + `sttfstate114294350` created; app registration with `github-main` and `github-pull-request` federated credentials; Contributor + User Access Administrator + Storage Blob Data Contributor verified. |
+| `az account show` + provider registration + remote-state bootstrap + OIDC identity | **PASS** | [azure-setup.txt](evidence/azure-setup.txt) | Subscription enabled; 12 resource providers registered; state backend recreated as `sttfstate2380610774` after the first teardown; app registration with legacy **and** immutable-subject federated credentials; Contributor + User Access Administrator + Storage Blob Data Contributor verified. |
 | `terraform plan` against real Azure (AAD backend) | **PASS** | [terraform-plan-azure.txt](evidence/terraform-plan-azure.txt) | First run exposed a real `Invalid for_each argument` bug (secret key set derived from an apply-time value); fixed in `locals.tf`. After the fix: 26 to add (default), 22 to add with `llm_provider = "echo"`. |
-| Azure deploy + live `/health` on FQDN | **PASS** | [azure-deploy.txt](evidence/azure-deploy.txt) | `terraform apply` added 17 resources (echo mode, no OpenAI). `/health` 200, `/ask` 200, `/boom` 500 on the live FQDN. |
-| 20 × `/boom` + 5xx alert fired + email received | **PASS (alert) / NOT VERIFIED (email)** | [azure-deploy.txt](evidence/azure-deploy.txt) | Alert `alert-http5xx-azureaisvc-dev` fired (`State: New`, 2026-11-02T02:08:09Z) with the configured email receiver. Email delivery needs the Azure action-group confirmation link to be clicked by the receiver. |
-| `terraform destroy` clean teardown | **PASS** | [azure-deploy.txt](evidence/azure-deploy.txt) | `Destroy complete! Resources: 5 destroyed.` after a transient DNS abort; state empty, `rg-tfstate` deleted, only Azure's free auto-created `NetworkWatcherRG` remains. |
-| CI workflow runs (`gh run list`) | **NOT RUN** (`gh`) / **FAIL (expected)** (API) | [github-actions.txt](evidence/github-actions.txt) | `gh` not installed; the public GitHub Actions API was used instead. `terraform-apply` on `7f439a8` (latest) failed at the `Azure login (OIDC)` step; the two earlier pushes failed at the same step. `app-ci` last passed on `d779029`; `terraform-plan` has no runs (no PR). |
+| Azure deploy + live `/health` on FQDN | **PASS** | [azure-deploy.txt](evidence/azure-deploy.txt), [github-actions.txt](evidence/github-actions.txt) | Local apply added 17 resources; a full GitHub Actions run (`41688133667`) then deployed end-to-end in echo mode. `/health` 200, `/ask` 200, `/boom` 500 on the stable FQDN. |
+| 20 × `/boom` + 5xx alert fired + email received | **PASS (alert) / NOT VERIFIED (email)** | [azure-deploy.txt](evidence/azure-deploy.txt), [github-actions.txt](evidence/github-actions.txt) | Alert `alert-http5xx-azureaisvc-dev` fired in both deploy cycles (`2026-11-02T02:08:09Z`, `2026-11-03T17:54:02Z`) with the configured email receiver. Email delivery needs the Azure action-group confirmation link to be clicked by the receiver. |
+| `terraform destroy` clean teardown | **PASS** | [azure-deploy.txt](evidence/azure-deploy.txt) | `Destroy complete!` after a transient DNS abort; state empty, `rg-tfstate` deleted, only Azure's free auto-created `NetworkWatcherRG` remains. |
+| CI workflow runs (`terraform-apply`) | **PASS** | [github-actions.txt](evidence/github-actions.txt) | Run `41688133667` on `d3a8fbd`: all 12 steps succeeded (OIDC, init, ACR bootstrap, docker build/push, apply, outputs, revision roll, `/health`). Earlier runs exposed and fixed three real CI bugs: missing repo variables, immutable OIDC subject, and lost state-account RBAC after re-bootstrap. |
 
-### CI failure detail
+### CI history
 
-The latest pushed `terraform-apply` run (`7f439a8`) failed at **Azure login
-(OIDC)**; every Terraform/build/deploy step was skipped. The two earlier pushes
-(`f0e2a04`, `d779029`) failed at the same step. The job log endpoint requires
-repository admin auth (API returned 403), so the exact login message was not
-retrievable. This is the expected failure until the `AZURE_CLIENT_ID`,
-`AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID` repository variables and the
-matching OIDC federated credential exist. Because CI never reached Terraform, the
-null-safety fix was verified locally with `terraform console`
-([terraform-locals-null-check.txt](evidence/terraform-locals-null-check.txt)).
-`app-ci` did not re-run for these pushes because no `app/**` file changed; its last
-run on the initial commit passed.
+The first `terraform-apply` runs failed at **Azure login (OIDC)** because the
+`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID` repository
+variables did not exist. After they were configured, run `41621340867` got past
+login but failed at `terraform init` for two independent reasons, both fixed:
+
+1. **Immutable OIDC subject.** GitHub presented
+   `repo:farheenfathimaa@118092949/azure-ai-service-infra@1422058546:ref:refs/heads/main`,
+   which did not match the legacy `repo:owner/repo:...` credential
+   (`AADSTS700213`). `scripts/setup-oidc.sh` / `.ps1` now register both formats.
+2. **Lost state RBAC.** Recreating `rg-tfstate` deleted the OIDC service
+   principal's `Storage Blob Data Contributor` assignment (bootstrap only granted
+   the signed-in user). The role was re-granted and `bootstrap.sh` now accepts
+   `CI_PRINCIPAL_ID` to do this automatically.
+
+Run `41622252592` then succeeded, but exposed a latent bug: `container_app_fqdn`
+used `latest_revision_fqdn`, which changes on every revision roll, so the smoke
+test URL 404'd once the pre-roll revision deactivated. The outputs now use the
+stable `ingress[0].fqdn`. Run `41688133667` on `d3a8fbd` passed all 12 steps with
+that fix. Raw step-level output: [github-actions.txt](evidence/github-actions.txt).
 
 ## Checkov disposition
 
@@ -89,12 +97,13 @@ need separate design/approval (and some add cost).
 
 ## What was verified vs. not verified
 
-Verified locally: unit tests, host-process endpoints, Terraform formatting and
-validation, workflow/shell/Terraform linting, secret scan, and structural
-completeness.
+Verified: unit tests, host-process endpoints, Terraform formatting/validation,
+workflow/shell/Terraform linting, secret scan, structural completeness, real
+Azure provisioning, the live `/health` `/ask` `/boom` endpoints, the 5xx metric
+alert firing, a clean `terraform destroy`, and a full GitHub Actions
+`terraform-apply` run (run `41688133667`, all 12 steps).
 
-Not verified: the Docker image, the application stack in Azure (only the
-remote-state storage account and the OIDC identity exist so far), the live
-`/health` endpoint, the 5xx alert firing/email delivery, clean
-`terraform destroy`, and CI workflow execution. The project should **not** be
-described as "deployed" based on this evidence.
+Not verified: alert **email delivery** (the Azure action-group confirmation link
+has not been clicked by the receiver), and `app-ci` / `terraform-plan` runs after
+the latest commits (they only trigger on `app/**` changes or pull requests).
+Both deployed stacks were torn down after verification, so no URLs remain live.

@@ -9,18 +9,18 @@ output "container_app_name" {
 }
 
 output "container_app_fqdn" {
-  description = "Public FQDN of the Container App."
-  value       = azurerm_container_app.app.latest_revision_fqdn
+  description = "Stable public FQDN of the Container App (routes to the latest revision)."
+  value       = azurerm_container_app.app.ingress[0].fqdn
 }
 
 output "health_url" {
   description = "URL to hit to check the service health."
-  value       = "https://${azurerm_container_app.app.latest_revision_fqdn}/health"
+  value       = "https://${azurerm_container_app.app.ingress[0].fqdn}/health"
 }
 
 output "ask_url" {
   description = "URL of the RAG endpoint."
-  value       = "https://${azurerm_container_app.app.latest_revision_fqdn}/ask"
+  value       = "https://${azurerm_container_app.app.ingress[0].fqdn}/ask"
 }
 
 output "container_registry_login_server" {

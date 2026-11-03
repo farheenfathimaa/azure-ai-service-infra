@@ -37,3 +37,14 @@ JOB apply | status=completed | conclusion=failure
   STEP 23 Post Azure login (OIDC) | completed | success
   STEP 24 Post Run actions/checkout@v4 | completed | success
   STEP 25 Complete job | completed | success
+
+--- run 41580774675 (commit 7945c2a, 2026-11-03) ---
+workflow: terraform-apply | status=completed | conclusion=failure
+JOB apply | failure
+  STEP 4 Azure login (OIDC) | failure
+  STEP 5-12 (init, ACR bootstrap, build/push, apply, outputs, revision, smoke) | skipped
+Cause: repository variables AZURE_CLIENT_ID / AZURE_TENANT_ID /
+AZURE_SUBSCRIPTION_ID (and TF_STATE_*) are not configured in GitHub, so the
+OIDC login has no identity to assume. This is the only remaining CI blocker.
+Note: rg-tfstate was deleted during teardown, so re-run infra/bootstrap/bootstrap.sh
+before re-enabling the deploy workflow.

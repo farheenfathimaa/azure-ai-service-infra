@@ -171,6 +171,14 @@ This creates `rg-tfstate`, a hardened storage account, and the `tfstate`
 container, then prints backend values. Copy them into
 `infra/terraform/backend.hcl` (see `backend.hcl.example`).
 
+If CI already deploys to this subscription, pass the OIDC service principal's
+object ID so it keeps access to the recreated state account (deleting the
+account also deletes its role assignments):
+
+```bash
+CI_PRINCIPAL_ID=<service-principal-object-id> ./bootstrap.sh eastus2
+```
+
 ---
 
 ## 2. Create the GitHub OIDC identity (once)
@@ -184,8 +192,9 @@ container, then prints backend values. Copy them into
 ./scripts/setup-oidc.sh <owner>/<repo> /subscriptions/.../storageAccounts/<stacct>
 ```
 
-It creates an app registration + service principal with two federated
-credentials (`pull_request` and `refs/heads/main`) and grants:
+It creates an app registration + service principal with federated
+credentials for `pull_request` and `refs/heads/main`, in both the legacy and
+immutable-ID subject formats, and grants:
 
 - `Contributor` on the subscription (create/update resources)
 - `User Access Administrator` on the subscription (create the role assignments

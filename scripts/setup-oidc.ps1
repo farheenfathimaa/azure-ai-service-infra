@@ -5,9 +5,10 @@
     federated credentials) and the RBAC it needs.
 
 .DESCRIPTION
-    Creates an Entra ID application, a service principal, and two federated
-    credentials (one for pull requests, one for the main branch). It then grants
-    the required roles. No client secret is ever created or stored.
+    Creates an Entra ID application, a service principal, and federated
+    credentials (for pull requests and the main branch, in both the legacy and
+    immutable-ID subject formats). It then grants the required roles. No client
+    secret is ever created or stored.
 
     Required roles granted on the subscription:
       * Contributor              - create/update the workload resources
@@ -77,6 +78,22 @@ New-FederatedCredential -Name 'github-pull-request' -Subject "repo:${GitHubRepo}
 New-FederatedCredential -Name 'github-main'         -Subject "repo:${GitHubRepo}:ref:refs/heads/main"
 if ($Environment) {
     New-FederatedCredential -Name "github-env-$Environment" -Subject "repo:${GitHubRepo}:environment:${Environment}"
+}
+
+# Newer GitHub repositories present OIDC subjects with immutable numeric IDs
+# (repo:owner@<owner-id>/repo@<repo-id>:ref:refs/heads/main). Register matching
+# credentials so either subject format is accepted.
+$owner, $repo = $GitHubRepo -split '/', 2
+try {
+    $repoInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/$owner/$repo" -Headers @{ 'User-Agent' = 'setup-oidc' }
+    $immutableRepo = "$owner@$($repoInfo.owner.id)/$repo@$($repoInfo.id)"
+    New-FederatedCredential -Name 'github-pull-request-immutable' -Subject "repo:${immutableRepo}:pull_request"
+    New-FederatedCredential -Name 'github-main-immutable'         -Subject "repo:${immutableRepo}:ref:refs/heads/main"
+    if ($Environment) {
+        New-FederatedCredential -Name "github-env-$Environment-immutable" -Subject "repo:${immutableRepo}:environment:${Environment}"
+    }
+} catch {
+    Write-Warning "Could not resolve owner/repo numeric IDs; immutable-subject credentials not created: $_"
 }
 
 Write-Host "Granting subscription roles"

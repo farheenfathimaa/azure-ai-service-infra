@@ -3,6 +3,10 @@
 # Run once per subscription/environment before `terraform init`.
 #
 # Usage: ./bootstrap.sh [location] [resource-group] [storage-account] [container]
+#
+# Set CI_PRINCIPAL_ID to the GitHub Actions OIDC service principal's object ID to
+# also grant it access to the state account (required when the backend is
+# recreated, because deleting the account deletes its role assignments).
 set -euo pipefail
 
 SUBSCRIPTION_ID="${ARM_SUBSCRIPTION_ID:-}"
@@ -57,6 +61,13 @@ PRINCIPAL_ID="$(az ad signed-in-user show --query id -o tsv 2>/dev/null || true)
 if [[ -n "$PRINCIPAL_ID" ]]; then
   echo "Granting current user Storage Blob Data Contributor on the state account"
   az role assignment create --assignee-object-id "$PRINCIPAL_ID" --assignee-principal-type User \
+    --role "Storage Blob Data Contributor" --scope "$STORAGE_ID" -o none
+fi
+
+CI_PRINCIPAL_ID="${CI_PRINCIPAL_ID:-}"
+if [[ -n "$CI_PRINCIPAL_ID" ]]; then
+  echo "Granting CI principal $CI_PRINCIPAL_ID Storage Blob Data Contributor on the state account"
+  az role assignment create --assignee-object-id "$CI_PRINCIPAL_ID" --assignee-principal-type ServicePrincipal \
     --role "Storage Blob Data Contributor" --scope "$STORAGE_ID" -o none
 fi
 

@@ -56,6 +56,33 @@ if [[ -n "$ENVIRONMENT" ]]; then
   create_federated_credential "github-env-${ENVIRONMENT}" "repo:${GITHUB_REPO}:environment:${ENVIRONMENT}"
 fi
 
+# Newer GitHub repositories present OIDC subjects with immutable numeric IDs
+# (repo:owner@<owner-id>/repo@<repo-id>:ref:refs/heads/main), which do not match
+# the legacy subject above. Resolve the IDs from the public API and add matching
+# credentials so either subject format works.
+OWNER="${GITHUB_REPO%%/*}"
+REPO="${GITHUB_REPO#*/}"
+OWNER_ID=""
+REPO_ID=""
+if command -v curl >/dev/null 2>&1; then
+  repo_json="$(curl -fsSL "https://api.github.com/repos/${OWNER}/${REPO}" 2>/dev/null || true)"
+  if [[ -n "$repo_json" ]]; then
+    REPO_ID="$(printf '%s' "$repo_json" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("id",""))' 2>/dev/null || true)"
+    OWNER_ID="$(printf '%s' "$repo_json" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("owner",{}).get("id",""))' 2>/dev/null || true)"
+  fi
+fi
+
+if [[ -n "$OWNER_ID" && -n "$REPO_ID" ]]; then
+  IMMUTABLE_REPO="${OWNER}@${OWNER_ID}/${REPO}@${REPO_ID}"
+  create_federated_credential "github-pull-request-immutable" "repo:${IMMUTABLE_REPO}:pull_request"
+  create_federated_credential "github-main-immutable" "repo:${IMMUTABLE_REPO}:ref:refs/heads/main"
+  if [[ -n "$ENVIRONMENT" ]]; then
+    create_federated_credential "github-env-${ENVIRONMENT}-immutable" "repo:${IMMUTABLE_REPO}:environment:${ENVIRONMENT}"
+  fi
+else
+  echo "  warning: could not resolve owner/repo numeric IDs; immutable-subject credentials not created" >&2
+fi
+
 echo "Granting subscription roles"
 az role assignment create --assignee-object-id "$SP_OBJECT_ID" --assignee-principal-type ServicePrincipal \
   --role "Contributor" --scope "/subscriptions/$CURRENT_SUB" -o none

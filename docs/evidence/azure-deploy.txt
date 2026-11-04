@@ -85,3 +85,11 @@ App:
   image: acrazureaisvcdev4xww.azurecr.io/azure-ai-service:d3a8fbdb4075cd98fceb742002b3cf9ea3fe735e
   revision: ca-azureaisvc-dev--0000002
   scale: min 0 (scale to zero), max 3
+
+--- terraform destroy (CI cycle, 2026-11-04) ---
+Destroy complete! Resources: 22 destroyed.
+terraform state list: 0 resources
+rg-tfstate deleted after the stack teardown.
+Final az group list: only NetworkWatcherRG (Azure-managed, free)
+Final az resource list: only NetworkWatcher_eastus2 (Azure-managed, free)
+Deleted Key Vaults: none

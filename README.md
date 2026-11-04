@@ -415,9 +415,11 @@ Live Azure setup and `terraform plan` (2026-11-01) are recorded in
   with its federated credentials and RBAC, and `terraform plan` against the real
   backend (26 resources). The plan run found and fixed a `for_each` bug in
   `infra/terraform/locals.tf`.
-- **Not verified:** Docker build/container smoke (Docker unavailable locally;
-  the image was built with Podman and ran in Azure), alert **email delivery**
-  (needs the Azure confirmation link clicked), and CI workflow runs (no `gh`).
+- **Not verified:** a Docker-daemon build (Docker is unavailable locally; the
+  same Dockerfile was built with Podman and the image ran in Azure) and alert
+  **email delivery** (needs the Azure confirmation link clicked). `app-ci` and
+  `terraform-plan` have not re-run for the latest commits (no `app/**` change or
+  pull request).
 
 ### Live deployments (2026-11-02 and 2026-11-03)
 
@@ -452,6 +454,7 @@ Latest (CI-deployed) outputs:
 > Both deployments were torn down after verification, so the URLs above no longer
 > resolve. Raw output: [docs/evidence/azure-deploy.txt](docs/evidence/azure-deploy.txt)
 > and [docs/evidence/github-actions.txt](docs/evidence/github-actions.txt).
+
 ---
 
 ## Verify the stack (definition of done)
@@ -461,7 +464,8 @@ Latest (CI-deployed) outputs:
 2. `curl https://<container_app_fqdn>/health` returns
    `{"status":"ok", ...}`.
 3. The 5xx test alert (`/boom` loop above) transitions to **Fired** and an email
-   is delivered.
+   is delivered (Azure requires the receiver to click the action-group
+   confirmation link once).
 
 ---
 

@@ -1,15 +1,15 @@
 # Verification Evidence
 
-**Date:** 2026-10-30, with live Azure setup added 2026-11-01 (UTC)
+**Date:** 2026-10-30 (local checks), live Azure cycles 2026-11-01 → 2026-11-04 (UTC)
 **Repository:** `farheenfathimaa/azure-ai-service-infra`
-**Environment:** Ubuntu 26.04, no Docker daemon, no GitHub CLI (`gh`). Azure CLI
-2.91.0 was installed and logged in on 2026-11-01; the local checks above were
-run before that, so they used `init -backend=false`.
+**Environment:** Ubuntu 26.04, no Docker daemon (Podman 5.7.0 was used for the
+image), no GitHub CLI (`gh`); the public GitHub Actions API was used instead.
 
 Every result below comes from a command that was actually run. Raw output is in
-[`docs/evidence/`](evidence/). Tools were installed **locally** for this run
-(`/tmp/opencode` and a user-level `uv` tool directory); no system/global packages
-were installed and no Azure resources were created, changed, or deleted.
+[`docs/evidence/`](evidence/). Terraform and the linters were installed under
+`/tmp/opencode` and a user-level `uv` directory; Azure CLI 2.91.0 and Podman were
+installed system-wide. Azure resources were created, verified, and destroyed as
+described below.
 
 ## Versions
 
@@ -21,6 +21,7 @@ were installed and no Azure resources were created, changed, or deleted.
 | pytest | 8.3.4 |
 | Terraform | 1.9.8 |
 | Docker | **not installed** |
+| Podman | 5.7.0 (used for the image build/push) |
 | Azure CLI (`az`) | 2.91.0 (installed 2026-11-01) |
 | GitHub CLI (`gh`) | **not installed** |
 | actionlint | 1.7.7 |
@@ -34,7 +35,7 @@ were installed and no Azure resources were created, changed, or deleted.
 | Check | Result | Evidence | Notes |
 | --- | --- | --- | --- |
 | Python dependency install + pytest | **PASS** | [pytest.txt](evidence/pytest.txt) | 6 passed, 1 third-party deprecation warning, 0 failed. |
-| Docker build + container smoke (`/health`, `/ask`, `/boom`) | **NOT RUN** | [docker-smoke.txt](evidence/docker-smoke.txt) | Docker CLI/daemon unavailable; installing it needs root. No Docker build was executed. |
+| Docker build + container smoke (`/health`, `/ask`, `/boom`) | **NOT RUN (Docker)** / **PASS (Podman + Azure)** | [docker-smoke.txt](evidence/docker-smoke.txt), [azure-deploy.txt](evidence/azure-deploy.txt) | Docker CLI/daemon is unavailable, so no Docker build was executed. The same Dockerfile was built with Podman and the resulting image was deployed to Azure and exercised live (`/health`, `/ask`, `/boom`). |
 | Host-process endpoint smoke (supplementary, **not** Docker) | **PASS** | [local-smoke.txt](evidence/local-smoke.txt) | uvicorn with `LLM_PROVIDER=echo ALLOW_BOOM=true`: `/health` 200, `/ask` 200, `/boom` 500. |
 | Terraform `fmt -check -recursive`, `init -backend=false`, `validate` | **PASS** | [terraform-validate.txt](evidence/terraform-validate.txt) | All three exit codes 0. |
 | Terraform optional-value null safety | **PASS** | [terraform-locals-null-check.txt](evidence/terraform-locals-null-check.txt) | Isolated `terraform console` test: null, empty, and whitespace-only inputs normalize to null; real values pass through. |
